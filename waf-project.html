@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WAF Rate Limiting & Managed Challenge | Oscar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <p><a href="/" class="back-link">&larr; Back home</a></p>
+      <h1>WAF Rate Limiting &amp; Managed Challenge</h1>
+      <p class="subtitle">A deep dive into a Cloudflare Rules language bug I found and fixed</p>
+    </header>
+
+    <section class="intro">
+      <p>This project started as a simple test: add a Managed Challenge to a Cloudflare Rate Limiting rule and watch it trigger. Along the way I found a real operator-precedence bug in my own rule expression, learned how Workers static-asset redirects interact with rate-limit path matching, and confirmed the challenge firing at the protocol level via Cloudflare's Privacy Pass token exchange.</p>
+    </section>
+
+    <section class="waf-doc-section">
+      <h2>Architecture</h2>
+      <p>The zone serves three hostnames: the apex (static site), a redirecting <code>www</code>, and a Tunnel-backed origin for testing.</p>
+      <img src="zone-structure.png" alt="Zone structure diagram showing oscarlogs.com apex, www redirect, and httpbin tunnel" class="diagram-img">
+    </section>
+
+    <section class="waf-doc-section">
+      <h2>The Bug I Found</h2>
+      <p>My original rate-limit expression used parentheses that looked correct but actually left one clause unscoped to a specific hostname, letting it silently match across the whole zone instead of just the apex.</p>
+      <img src="precedence-bug.png" alt="Before and after diagram showing an operator precedence bug in a Cloudflare rule expression" class="diagram-img">
+      <p class="code-block-label">Before (buggy):</p>
+      <pre class="code-block">(http.host eq "oscarlogs.com" and http.request.uri.path eq "/") or (http.request.uri.path eq "/hello")</pre>
+      <p class="code-block-label">After (corrected):</p>
+      <pre class="code-block">http.host eq "oscarlogs.com" and (http.request.uri.path eq "/" or http.request.uri.path eq "/hello")</pre>
+    </section>
+
+    <section class="waf-doc-section">
+      <h2>Request Flow</h2>
+      <p>Testing the rule revealed that a single button click actually generates three separate requests, only one of which the rule's path condition actually matches.</p>
+      <img src="waf-button-flow.png" alt="Sequence diagram showing which requests count toward the rate limit" class="diagram-img">
+    </section>
+
+    <section class="waf-doc-section">
+      <h2>Lessons Learned</h2>
+      <ul class="lessons-list">
+        <li>Rate-limit rules count matching requests individually, including sub-resources like CSS &mdash; scope precisely or you'll accidentally challenge assets, not just page loads.</li>
+        <li><code>and</code> binds tighter than <code>or</code> &mdash; always parenthesize the full intended group, not just part of it.</li>
+        <li>Workers static-asset redirects (<code>.html</code> &rarr; clean URL) create an extra hop that may or may not match your rule, depending on exactly which path you wrote.</li>
+        <li>Verify with real traffic (Security Events, response headers) rather than assuming an expression does what it visually appears to do.</li>
+      </ul>
+    </section>
+
+    <footer>
+      <a href="https://www.linkedin.com/in/oal18/" target="_blank" rel="noopener">LinkedIn</a>
+      <span class="dot">&middot;</span>
+      <span>Built and deployed via Cloudflare Workers</span>
+    </footer>
+  </main>
+</body>
+</html>
