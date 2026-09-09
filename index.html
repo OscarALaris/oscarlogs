@@ -23,6 +23,12 @@
         <h3>Cloudflare Zero Trust Lab Environment</h3>
         <p>Set up a personal domain on an Enterprise Cloudflare account, deployed a local origin server via Docker, and published it through Cloudflare Tunnel — no open ports, no public IP. Configured DNS, verified CDN/proxy behavior via request header inspection (Cf-Ray, Cf-Connecting-Ip), and worked through a Zero Trust Access default-deny policy to control exposure.</p>
       </div>
+
+      <div class="project-card">
+        <h3>WAF Rate Limiting & Managed Challenge</h3>
+        <p>Built a Cloudflare Rate Limiting Rule paired with a Managed Challenge to protect against request abuse. Along the way, debugged a real operator-precedence bug in the Rules language expression, traced how Workers static-asset redirects interact with rate-limit path matching, and confirmed the challenge firing end-to-end via Cloudflare's Privacy Pass token exchange at the protocol level.</p>
+        <a href="/waf-project.html" class="test-button">View Project Details →</a>
+      </div>
     </section>
 
     <footer>
@@ -31,9 +37,9 @@
       <span>Built and deployed via Cloudflare Workers</span>
     </footer>
     <section class="waf-test">
-  <a href="/hello.html" class="test-button">Test WAF Rate Limit →</a>
-  <p class="hint">Click this 5-6 times quickly to trigger the Managed Challenge.</p>
-</section>
+      <a href="/hello.html" class="test-button">Test WAF Rate Limit →</a>
+      <p class="hint">Click this 5-6 times quickly to trigger the Managed Challenge.</p>
+    </section>
   </main>
 </body>
 </html>
